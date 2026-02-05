@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Download, Star, User, Tag } from 'lucide-react';
+import { ArrowLeft, Download, Star, User } from 'lucide-react';
 
 export default function SkillPage() {
   const params = useParams();
@@ -25,17 +25,14 @@ export default function SkillPage() {
       setLoading(true);
       setError(null);
       
-      // Fetch skill details
       const res = await fetch(`http://localhost:4001/api/skills/${skillSlug}`);
       if (!res.ok) throw new Error('Skill not found');
       const data = await res.json();
       setSkill(data.skill);
       
-      // Fetch related skills (same category)
       if (data.skill?.categories?.length > 0) {
         const relatedRes = await fetch(`http://localhost:4001/api/skills?category=${data.skill.categories[0]}&limit=5`);
         const relatedData = await relatedRes.json();
-        // Filter out current skill
         setRelated((relatedData.skills || []).filter(s => s.slug !== skillSlug));
       }
     } catch (e) {
@@ -45,6 +42,7 @@ export default function SkillPage() {
     }
   }
 
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
@@ -53,10 +51,21 @@ export default function SkillPage() {
     );
   }
 
+  // Error state
   if (error || !skill) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gray-900 text-white">
+        <header className="border-b border-gray-700 sticky top-0 bg-gray-900 z-10">
+          <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
+            <Link href="/" className="text-2xl font-bold">
+              <span className="text-blue-400">Claw</span>Hub Clone
+            </Link>
+            <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
+              GitHub
+            </a>
+          </div>
+        </header>
+        <div className="max-w-4xl mx-auto px-4 py-8">
           <Link href="/" className="text-blue-400 hover:text-blue-300 flex items-center gap-2">
             <ArrowLeft size={20} /> Back to skills
           </Link>
@@ -68,25 +77,26 @@ export default function SkillPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
-      <header className="border-b border-gray-700">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-xl font-bold text-blue-400">
-            ClawHub Clone
+      {/* Header - same as main page */}
+      <header className="border-b border-gray-700 sticky top-0 bg-gray-900 z-10">
+        <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold">
+            <span className="text-blue-400">Claw</span>Hub Clone
           </Link>
-          <nav className="flex gap-4">
-            <Link href="/" className="hover:text-blue-400">Skills</Link>
-            <Link href="https://github.com/alexandr-belogubov/clawhub-clone" className="hover:text-blue-400">GitHub</Link>
-          </nav>
+          <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
+            GitHub
+          </a>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        {/* Back link */}
-        <Link href="/" className="text-gray-400 hover:text-white flex items-center gap-2 mb-8">
+      {/* Back link */}
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <Link href="/" className="text-gray-400 hover:text-white flex items-center gap-2">
           <ArrowLeft size={20} /> Back to all skills
         </Link>
+      </div>
 
+      <main className="max-w-6xl mx-auto px-4 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
@@ -108,12 +118,7 @@ export default function SkillPage() {
                   </div>
                 </div>
                 {skill.github_url && (
-                  <a
-                    href={skill.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-medium transition"
-                  >
+                  <a href={skill.github_url} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-medium transition">
                     View on GitHub
                   </a>
                 )}
@@ -143,11 +148,7 @@ export default function SkillPage() {
               <h2 className="text-xl font-bold mb-4">Categories</h2>
               <div className="flex flex-wrap gap-2">
                 {(skill.categories || []).map(cat => (
-                  <Link
-                    key={cat}
-                    href={`/?category=${cat}`}
-                    className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30"
-                  >
+                  <Link key={cat} href={`/?category=${cat}`} className="px-4 py-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600/30">
                     {cat}
                   </Link>
                 ))}
@@ -188,11 +189,7 @@ export default function SkillPage() {
                 <h2 className="text-lg font-bold mb-4">Related Skills</h2>
                 <div className="space-y-4">
                   {related.slice(0, 5).map(relatedSkill => (
-                    <Link
-                      key={relatedSkill.slug}
-                      href={`/skill/${relatedSkill.slug}`}
-                      className="block p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition"
-                    >
+                    <Link key={relatedSkill.slug} href={`/skill/${relatedSkill.slug}`} className="block p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition">
                       <div className="font-medium mb-1">{relatedSkill.name}</div>
                       <div className="text-sm text-gray-400 flex items-center gap-2">
                         <Download size={12} /> {relatedSkill.downloads?.toLocaleString()}
@@ -206,16 +203,9 @@ export default function SkillPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-700 mt-16 py-8">
-        <div className="max-w-6xl mx-auto px-4 text-center text-gray-500">
-          <p>Built with ❤️ for the OpenClaw community</p>
-          <p className="text-sm mt-2">
-            <Link href="https://github.com/alexandr-belogubov/clawhub-clone" className="hover:text-white">
-              Star on GitHub
-            </Link>
-          </p>
-        </div>
+      {/* Footer - same as main page */}
+      <footer className="border-t border-gray-700 py-8 text-center text-gray-500">
+        <p>Built with ❤️ for the OpenClaw community</p>
       </footer>
     </div>
   );
