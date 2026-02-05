@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Better skill marketplace for OpenClaw",
   "private": true,
+  "type": "module",
   "workspaces": [
     "api",
     "web",
@@ -15,9 +16,14 @@
     "build": "npm run build:api && npm run build:web",
     "build:api": "cd api && npm run build",
     "build:web": "cd web && npm run build",
-    "db:migrate": "cd database && npm run migrate",
+    "migrate": "node scripts/migrate.js",
+    "db:migrate": "npm run migrate",
     "sync:skills": "cd scripts && node sync-skills.js",
     "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
