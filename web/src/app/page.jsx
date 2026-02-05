@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, Download, Star, Filter } from 'lucide-react';
+import { Search, Eye, Filter } from 'lucide-react';
 
 export default function Home() {
   const [skills, setSkills] = useState([]);
@@ -14,9 +14,9 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const loadMoreRef = useRef(null);
+  const isInitialMount = useRef(true);
 
   const LIMIT = 50;
-  const isInitialMount = useRef(true);
 
   // Initial load
   useEffect(() => {
@@ -30,7 +30,6 @@ export default function Home() {
       isInitialMount.current = false;
       fetchSkills(0, true);
     } else {
-      // Debounce filter changes
       const timer = setTimeout(() => {
         fetchSkills(0, true);
       }, 300);
@@ -38,7 +37,7 @@ export default function Home() {
     }
   }, [search, selectedCategory]);
 
-  // Infinite scroll observer
+  // Infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -91,7 +90,7 @@ export default function Home() {
     try {
       const res = await fetch('http://localhost:4001/api/skills/stats');
       const data = await res.json();
-      setStats(data.stats || { total: 0, downloads: 0, installs: 0 });
+      setStats(data.stats || { total: 0, views: 0, installs: 0 });
     } catch (e) {
       console.error('Failed to fetch stats:', e);
     }
@@ -107,6 +106,12 @@ export default function Home() {
     }
   }
 
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
@@ -115,12 +120,7 @@ export default function Home() {
           <h1 className="text-2xl font-bold">
             <span className="text-blue-400">Claw</span>Hub Clone
           </h1>
-          <a
-            href="https://github.com/alexandr-belogubov/clawhub-clone"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 hover:text-white"
-          >
+          <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
             GitHub
           </a>
         </div>
@@ -128,12 +128,9 @@ export default function Home() {
 
       {/* Hero */}
       <section className="py-16 px-4 text-center">
-        <h2 className="text-4xl font-bold mb-4">
-          Discover OpenClaw Skills
-        </h2>
+        <h2 className="text-4xl font-bold mb-4">Discover OpenClaw Skills</h2>
         <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-          A better skill marketplace for OpenClaw. Browse, search, and install
-          skills to supercharge your AI agents.
+          A better skill marketplace for OpenClaw. Browse, search, and install skills to supercharge your AI agents.
         </p>
         
         {/* Search */}
@@ -158,8 +155,8 @@ export default function Home() {
               <div className="text-sm text-gray-400">Total Skills</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{stats.downloads?.toLocaleString()}</div>
-              <div className="text-sm text-gray-400">Downloads</div>
+              <div className="text-2xl font-bold text-green-400">{stats.views?.toLocaleString()}</div>
+              <div className="text-sm text-gray-400">Total Views</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-yellow-400">{stats.installs?.toLocaleString()}</div>
@@ -184,22 +181,11 @@ export default function Home() {
                 <h3 className="font-bold">Categories</h3>
               </div>
               <div className="space-y-2">
-                <button
-                  onClick={() => setSelectedCategory('')}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition ${
-                    !selectedCategory ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'
-                  }`}
-                >
+                <button onClick={() => setSelectedCategory('')} className={`w-full text-left px-3 py-2 rounded-lg transition ${!selectedCategory ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}>
                   All Skills
                 </button>
                 {categories.map(cat => (
-                  <button
-                    key={cat.name}
-                    onClick={() => setSelectedCategory(cat.name)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition flex justify-between ${
-                      selectedCategory === cat.name ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'
-                    }`}
-                  >
+                  <button key={cat.name} onClick={() => setSelectedCategory(cat.name)} className={`w-full text-left px-3 py-2 rounded-lg transition flex justify-between ${selectedCategory === cat.name ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}>
                     <span className="capitalize">{cat.name}</span>
                     <span className="text-gray-400 text-sm">{cat.count}</span>
                   </button>
@@ -213,37 +199,21 @@ export default function Home() {
             {loading && skills.length === 0 ? (
               <div className="text-center py-12 text-gray-400">Loading skills...</div>
             ) : skills.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                No skills found. Try a different search.
-              </div>
+              <div className="text-center py-12 text-gray-400">No skills found. Try a different search.</div>
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {skills.map(skill => (
-                    <Link
-                      key={skill.slug}
-                      href={`/skill/${skill.slug}`}
-                      className="bg-gray-800 rounded-xl p-4 hover:bg-gray-750 transition group"
-                    >
+                    <Link key={skill.slug} href={`/skill/${skill.slug}`} className="bg-gray-800 rounded-xl p-4 hover:bg-gray-750 transition group">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold group-hover:text-blue-400 transition">
-                          {skill.name}
-                        </h3>
-                        <span className="text-xs bg-gray-700 px-2 py-1 rounded">
-                          v{skill.version}
-                        </span>
+                        <h3 className="font-bold group-hover:text-blue-400 transition">{skill.name}</h3>
                       </div>
-                      <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-                        {skill.description}
-                      </p>
+                      <p className="text-sm text-gray-400 mb-3 line-clamp-2">{skill.description}</p>
                       <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>by {skill.author}</span>
+                        <span>{formatDate(skill.created_at)}</span>
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1">
-                            <Download size={14} /> {skill.downloads?.toLocaleString()}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Star size={14} className="text-yellow-400" /> {skill.stars}
+                            <Eye size={14} /> {skill.views?.toLocaleString()}
                           </span>
                         </div>
                       </div>
@@ -259,9 +229,7 @@ export default function Home() {
                 )}
                 
                 {!hasMore && skills.length > 0 && (
-                  <div className="py-8 text-center text-gray-500">
-                    All {skills.length.toLocaleString()} skills loaded
-                  </div>
+                  <div className="py-8 text-center text-gray-500">All {skills.length.toLocaleString()} skills loaded</div>
                 )}
               </>
             )}

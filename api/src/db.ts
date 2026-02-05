@@ -2,7 +2,6 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
-// Database configuration
 const pool = new Pool({
   host: process.env.DB_HOST || '165.232.135.139',
   port: parseInt(process.env.DB_PORT || '5432'),
@@ -30,7 +29,7 @@ export async function getSkills(options: {
   limit?: number;
   offset?: number;
 } = {}) {
-  const { category, tag, search, sort = 'downloads', limit = 50, offset = 0 } = options;
+  const { category, tag, search, sort = 'views', limit = 50, offset = 0 } = options;
   
   let where = 'WHERE 1=1';
   const params: unknown[] = [];
@@ -54,8 +53,8 @@ export async function getSkills(options: {
     paramIndex++;
   }
   
-  // Sort
-  let orderBy = 'downloads DESC';
+  // Sort by views by default
+  let orderBy = 'views DESC';
   switch (sort) {
     case 'installs':
       orderBy = 'installs DESC';
@@ -74,7 +73,7 @@ export async function getSkills(options: {
   params.push(limit, offset);
   
   const result = await query(
-    `SELECT slug, name, author, downloads, installs, stars, description, tags, categories, 
+    `SELECT slug, name, author, views, installs, stars, description, tags, categories, 
             github_url, version, url, created_at, updated_at
      FROM clawhub_skills ${where}
      ORDER BY ${orderBy} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
@@ -87,21 +86,25 @@ export async function getSkills(options: {
     name: row.name,
     author: row.author,
     description: row.description,
-    downloads: row.downloads,
+    views: row.views,
     installs: row.installs,
-    rating: row.stars > 0 ? Math.round(row.stars / 10 * 5) / 5 : 0, // Convert stars to 5-star rating
+    rating: row.stars > 0 ? Math.round(row.stars / 10 * 5) / 5 : 0,
     stars: row.stars,
     tags: row.tags || [],
     categories: row.categories || [],
     github_url: row.github_url,
     version: row.version,
-    updated_at: row.updated_at
+    updated_at: row.updated_at,
+    created_at: row.created_at
   }));
 }
 
 export async function getSkillBySlug(slug: string) {
+  // Increment views
+  await query(`UPDATE clawhub_skills SET views = views + 1 WHERE slug = $1`, [slug]);
+  
   const result = await query(
-    `SELECT slug, name, author, downloads, installs, stars, description, tags, categories,
+    `SELECT slug, name, author, views, installs, stars, description, tags, categories,
             github_url, version, url, created_at, updated_at
      FROM clawhub_skills WHERE slug = $1`,
     [slug]
@@ -116,7 +119,7 @@ export async function getSkillBySlug(slug: string) {
     name: row.name,
     author: row.author,
     description: row.description,
-    downloads: row.downloads,
+    views: row.views,
     installs: row.installs,
     rating: row.stars > 0 ? Math.round(row.stars / 10 * 5) / 5 : 0,
     stars: row.stars,
@@ -125,7 +128,8 @@ export async function getSkillBySlug(slug: string) {
     github_url: row.github_url,
     version: row.version,
     url: row.url,
-    updated_at: row.updated_at
+    updated_at: row.updated_at,
+    created_at: row.created_at
   };
 }
 
@@ -147,12 +151,12 @@ export async function getTags() {
 
 export async function getStats() {
   const result = await query(
-    `SELECT COUNT(*) as total, SUM(downloads) as downloads, SUM(installs) as installs
+    `SELECT COUNT(*) as total, SUM(views) as views, SUM(installs) as installs
      FROM clawhub_skills`
   );
   return {
     total: parseInt(result.rows[0].total),
-    downloads: parseInt(result.rows[0].downloads || 0),
+    views: parseInt(result.rows[0].views || 0),
     installs: parseInt(result.rows[0].installs || 0)
   };
 }

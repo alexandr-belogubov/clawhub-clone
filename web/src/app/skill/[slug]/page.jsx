@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Download, Star, User } from 'lucide-react';
+import { ArrowLeft, Eye, Star } from 'lucide-react';
 
 export default function SkillPage() {
   const params = useParams();
@@ -42,7 +42,12 @@ export default function SkillPage() {
     }
   }
 
-  // Loading state
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
@@ -51,7 +56,6 @@ export default function SkillPage() {
     );
   }
 
-  // Error state
   if (error || !skill) {
     return (
       <div className="min-h-screen bg-gray-900 text-white">
@@ -77,7 +81,7 @@ export default function SkillPage() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header - same as main page */}
+      {/* Header */}
       <header className="border-b border-gray-700 sticky top-0 bg-gray-900 z-10">
         <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold">
@@ -106,15 +110,8 @@ export default function SkillPage() {
                 <div>
                   <h1 className="text-3xl font-bold mb-2">{skill.name}</h1>
                   <div className="flex items-center gap-4 text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <User size={16} /> {skill.author}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Download size={16} /> {skill.downloads?.toLocaleString()} downloads
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Star size={16} className="text-yellow-400" /> {skill.stars}
-                    </span>
+                    <span>by {skill.author}</span>
+                    <span>{formatDate(skill.created_at)}</span>
                   </div>
                 </div>
                 {skill.github_url && (
@@ -128,9 +125,7 @@ export default function SkillPage() {
 
               <div className="flex flex-wrap gap-2">
                 {(skill.tags || []).map(tag => (
-                  <span key={tag} className="px-3 py-1 bg-gray-700 rounded-full text-sm">
-                    {tag}
-                  </span>
+                  <span key={tag} className="px-3 py-1 bg-gray-700 rounded-full text-sm">{tag}</span>
                 ))}
               </div>
             </div>
@@ -158,17 +153,15 @@ export default function SkillPage() {
 
           {/* Sidebar */}
           <div>
-            {/* Stats Card */}
+            {/* Statistics */}
             <div className="bg-gray-800 rounded-xl p-6 mb-6">
               <h2 className="text-lg font-bold mb-4">Statistics</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Downloads</span>
-                  <span className="font-medium">{skill.downloads?.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-400">Stars</span>
-                  <span className="font-medium">{skill.stars}</span>
+                  <span className="text-gray-400">Views</span>
+                  <span className="font-medium flex items-center gap-1">
+                    <Eye size={14} /> {skill.views?.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Version</span>
@@ -176,9 +169,7 @@ export default function SkillPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Author</span>
-                  <Link href={`/?search=${skill.author}`} className="text-blue-400 hover:text-blue-300">
-                    {skill.author}
-                  </Link>
+                  <span className="font-medium">{skill.author}</span>
                 </div>
               </div>
             </div>
@@ -192,7 +183,7 @@ export default function SkillPage() {
                     <Link key={relatedSkill.slug} href={`/skill/${relatedSkill.slug}`} className="block p-3 bg-gray-700/50 rounded-lg hover:bg-gray-700 transition">
                       <div className="font-medium mb-1">{relatedSkill.name}</div>
                       <div className="text-sm text-gray-400 flex items-center gap-2">
-                        <Download size={12} /> {relatedSkill.downloads?.toLocaleString()}
+                        <Eye size={12} /> {relatedSkill.views?.toLocaleString()}
                       </div>
                     </Link>
                   ))}
@@ -203,7 +194,7 @@ export default function SkillPage() {
         </div>
       </main>
 
-      {/* Footer - same as main page */}
+      {/* Footer */}
       <footer className="border-t border-gray-700 py-8 text-center text-gray-500">
         <p>Built with ❤️ for the OpenClaw community</p>
       </footer>
