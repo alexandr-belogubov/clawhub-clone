@@ -47,7 +47,7 @@ export default function AddSkillPage() {
     setLoading(true);
     
     try {
-      const res = await fetch('http://localhost:4001/api/user-skills', {
+      const res = await fetch('http://localhost:4002/api/user-skills', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

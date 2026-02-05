@@ -48,7 +48,7 @@ export default function SkillPage() {
       const userData = localStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
-        const checkRes = await fetch(`http://localhost:4001/api/bookmarks/${skillSlug}/check?userId=${user.id}`);
+        const checkRes = await fetch(`http://localhost:4002/api/bookmarks/${skillSlug}/check?userId=${user.id}`);
         const checkData = await checkRes.json();
         setBookmarked(checkData.bookmarked);
       }
@@ -98,13 +98,13 @@ export default function SkillPage() {
     
     try {
       if (bookmarked) {
-        await fetch(`http://localhost:4001/api/bookmarks/${skill.slug}`, {
+        await fetch(`http://localhost:4002/api/bookmarks/${skill.slug}`, {
           method: 'DELETE',
           headers: { 'X-User-Id': user.id.toString() }
         });
         setBookmarked(false);
       } else {
-        await fetch('http://localhost:4001/api/bookmarks', {
+        await fetch('http://localhost:4002/api/bookmarks', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

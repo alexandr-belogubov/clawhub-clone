@@ -34,7 +34,7 @@ export default function BookmarksPage() {
 
   async function fetchBookmarks(userId) {
     try {
-      const res = await fetch(`http://localhost:4001/api/bookmarks?userId=${userId}`);
+      const res = await fetch(`http://localhost:4002/api/bookmarks?userId=${userId}`);
       const data = await res.json();
       setBookmarks(data.bookmarks || []);
     } catch (err) {
@@ -46,7 +46,7 @@ export default function BookmarksPage() {
 
   async function removeBookmark(slug) {
     try {
-      await fetch(`http://localhost:4001/api/bookmarks/${slug}`, {
+      await fetch(`http://localhost:4002/api/bookmarks/${slug}`, {
         method: 'DELETE',
         headers: { 'X-User-Id': user.id.toString() }
       });

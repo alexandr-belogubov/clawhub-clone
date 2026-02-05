@@ -39,7 +39,7 @@ export default function MySkillsPage() {
 
   async function fetchUserSkills(userId) {
     try {
-      const res = await fetch(`http://localhost:4001/api/user-skills?userId=${userId}`);
+      const res = await fetch(`http://localhost:4002/api/user-skills?userId=${userId}`);
       const data = await res.json();
       setSkills(data.skills || []);
     } catch (err) {
@@ -53,7 +53,7 @@ export default function MySkillsPage() {
     if (!confirm('Are you sure you want to delete this skill?')) return;
     
     try {
-      await fetch(`http://localhost:4001/api/user-skills/${id}`, {
+      await fetch(`http://localhost:4002/api/user-skills/${id}`, {
         method: 'DELETE',
         headers: { 'X-User-Id': user.id.toString() }
       });
@@ -211,7 +211,7 @@ function EditSkillModal({ skill, onClose, onSave }) {
   async function handleSave() {
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:4001/api/user-skills/${skill.id}`, {
+      const res = await fetch(`http://localhost:4002/api/user-skills/${skill.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
