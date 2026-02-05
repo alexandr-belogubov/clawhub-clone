@@ -1,6 +1,6 @@
 # ClawHub Scripts
 
-Scripts for scraping and importing skill data.
+Scripts for scraping, importing, and deploying skill data.
 
 ## Prerequisites
 
@@ -62,6 +62,45 @@ npm run db:migrate
 ```
 
 Runs database migrations.
+
+## Remote Access
+
+### Option 1: ngrok (public URL)
+
+On server:
+```bash
+# Install ngrok first
+./start-with-tunnel.sh
+
+# Output:
+# 🌐 Public URL: https://abcd-1234.ngrok.io
+```
+
+Open the ngrok URL in your browser.
+
+### Option 2: SSH Tunnel (from your Mac)
+
+On your Mac:
+```bash
+# Make script executable
+chmod +x tunnel-ssh.sh
+
+# Edit script and set your server IP
+# Then run:
+./tunnel-ssh.sh
+
+# Open http://localhost:3000 in browser
+```
+
+### Start/Stop Server
+
+```bash
+# Start with public access
+./start-with-tunnel.sh
+
+# Stop everything
+./stop.sh
+```
 
 ## Environment Variables
 
