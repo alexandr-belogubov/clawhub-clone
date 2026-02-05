@@ -1,8 +1,59 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { ArrowLeft, Download, Star, User, Tag } from 'lucide-react';
 
-export default function SkillPage({ skill, related }) {
-  if (!skill) {
+export default function SkillPage() {
+  const params = useParams();
+  const slug = params.slug;
+  
+  const [skill, setSkill] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (slug) {
+      fetchSkill(slug);
+    }
+  }, [slug]);
+
+  async function fetchSkill(skillSlug) {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch skill details
+      const res = await fetch(`http://localhost:4001/api/skills/${skillSlug}`);
+      if (!res.ok) throw new Error('Skill not found');
+      const data = await res.json();
+      setSkill(data.skill);
+      
+      // Fetch related skills (same category)
+      if (data.skill?.categories?.length > 0) {
+        const relatedRes = await fetch(`http://localhost:4001/api/skills?category=${data.skill.categories[0]}&limit=5`);
+        const relatedData = await relatedRes.json();
+        // Filter out current skill
+        setRelated((relatedData.skills || []).filter(s => s.slug !== skillSlug));
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error || !skill) {
     return (
       <div className="min-h-screen bg-gray-900 text-white p-8">
         <div className="max-w-4xl mx-auto">
@@ -49,27 +100,29 @@ export default function SkillPage({ skill, related }) {
                       <User size={16} /> {skill.author}
                     </span>
                     <span className="flex items-center gap-1">
-                      <Download size={16} /> {skill.downloads} downloads
+                      <Download size={16} /> {skill.downloads?.toLocaleString()} downloads
                     </span>
                     <span className="flex items-center gap-1">
                       <Star size={16} className="text-yellow-400" /> {skill.stars}
                     </span>
                   </div>
                 </div>
-                <a
-                  href={skill.github_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-medium transition"
-                >
-                  View on GitHub
-                </a>
+                {skill.github_url && (
+                  <a
+                    href={skill.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-medium transition"
+                  >
+                    View on GitHub
+                  </a>
+                )}
               </div>
 
               <p className="text-gray-300 mb-4">{skill.description}</p>
 
               <div className="flex flex-wrap gap-2">
-                {skill.tags.map(tag => (
+                {(skill.tags || []).map(tag => (
                   <span key={tag} className="px-3 py-1 bg-gray-700 rounded-full text-sm">
                     {tag}
                   </span>
@@ -89,7 +142,7 @@ export default function SkillPage({ skill, related }) {
             <div className="bg-gray-800 rounded-xl p-6">
               <h2 className="text-xl font-bold mb-4">Categories</h2>
               <div className="flex flex-wrap gap-2">
-                {skill.categories?.map(cat => (
+                {(skill.categories || []).map(cat => (
                   <Link
                     key={cat}
                     href={`/?category=${cat}`}
@@ -110,7 +163,7 @@ export default function SkillPage({ skill, related }) {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400">Downloads</span>
-                  <span className="font-medium">{skill.downloads}</span>
+                  <span className="font-medium">{skill.downloads?.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Stars</span>
@@ -122,7 +175,7 @@ export default function SkillPage({ skill, related }) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Author</span>
-                  <Link href={`/?q=${skill.author}`} className="text-blue-400 hover:text-blue-300">
+                  <Link href={`/?search=${skill.author}`} className="text-blue-400 hover:text-blue-300">
                     {skill.author}
                   </Link>
                 </div>
@@ -130,11 +183,11 @@ export default function SkillPage({ skill, related }) {
             </div>
 
             {/* Related Skills */}
-            {related && related.length > 0 && (
+            {related.length > 0 && (
               <div className="bg-gray-800 rounded-xl p-6">
                 <h2 className="text-lg font-bold mb-4">Related Skills</h2>
                 <div className="space-y-4">
-                  {related.map(relatedSkill => (
+                  {related.slice(0, 5).map(relatedSkill => (
                     <Link
                       key={relatedSkill.slug}
                       href={`/skill/${relatedSkill.slug}`}
@@ -142,7 +195,7 @@ export default function SkillPage({ skill, related }) {
                     >
                       <div className="font-medium mb-1">{relatedSkill.name}</div>
                       <div className="text-sm text-gray-400 flex items-center gap-2">
-                        <Download size={12} /> {relatedSkill.downloads}
+                        <Download size={12} /> {relatedSkill.downloads?.toLocaleString()}
                       </div>
                     </Link>
                   ))}

@@ -19,13 +19,13 @@ export default function Home() {
   async function fetchSkills() {
     try {
       const params = new URLSearchParams();
-      if (search) params.append('q', search);
+      if (search) params.append('search', search);
       if (selectedCategory) params.append('category', selectedCategory);
       
-      const res = await fetch(`http://localhost:3001/api/skills?${params}`);
+      const res = await fetch(`http://localhost:4001/api/skills?${params}`);
       const data = await res.json();
       setSkills(data.skills || []);
-      setStats(data.stats || null);
+      setStats({ total: data.total || 0, totalDownloads: 0, totalStars: 0 });
     } catch (e) {
       console.error('Failed to fetch skills:', e);
     } finally {
@@ -33,9 +33,19 @@ export default function Home() {
     }
   }
 
+  async function fetchStats() {
+    try {
+      const res = await fetch('http://localhost:4001/api/skills/stats');
+      const data = await res.json();
+      setStats(data.stats || { total: 0, downloads: 0, installs: 0 });
+    } catch (e) {
+      console.error('Failed to fetch stats:', e);
+    }
+  }
+
   async function fetchCategories() {
     try {
-      const res = await fetch('http://localhost:3001/api/skills/meta/categories');
+      const res = await fetch('http://localhost:4001/api/skills/categories');
       const data = await res.json();
       setCategories(data.categories || []);
     } catch (e) {
@@ -44,6 +54,7 @@ export default function Home() {
   }
 
   useEffect(() => {
+    fetchStats();
     fetchCategories();
   }, []);
 
@@ -94,16 +105,16 @@ export default function Home() {
         <section className="max-w-6xl mx-auto px-4 mb-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.total}</div>
+              <div className="text-2xl font-bold text-blue-400">{stats.total || skills.length}</div>
               <div className="text-sm text-gray-400">Total Skills</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{stats.totalDownloads}</div>
+              <div className="text-2xl font-bold text-green-400">{stats.downloads || 0}</div>
               <div className="text-sm text-gray-400">Downloads</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-400">{stats.totalStars}</div>
-              <div className="text-sm text-gray-400">Stars</div>
+              <div className="text-2xl font-bold text-yellow-400">{stats.installs || 0}</div>
+              <div className="text-sm text-gray-400">Installs</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-purple-400">{categories.length}</div>
