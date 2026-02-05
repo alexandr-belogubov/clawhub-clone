@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Search, Eye, Filter } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
+
+const EYE_ICON = (
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 512 512" fill="currentColor">
+    <path d="M184 448h48c4.4 0 8-3.6 8-8V72c0-4.4-3.6-8-8-8h-48c-4.4 0-8 3.6-8 8v368c0 4.4 3.6 8 8 8z" />
+    <path d="M88 448h48c4.4 0 8-3.6 8-8V296c0-4.4-3.6-8-8-8H88c-4.4 0-8 3.6-8 8v144c0 4.4 3.6 8 8 8z" />
+    <path d="M280.1 448h47.8c4.5 0 8.1-3.6 8.1-8.1V232.1c0-4.5-3.6-8.1-8.1-8.1h-47.8c-4.5 0-8.1 3.6-8.1 8.1v207.8c0 4.5 3.6 8.1 8.1 8.1z" />
+    <path d="M368 136.1v303.8c0 4.5 3.6 8.1 8.1 8.1h47.8c4.5 0 8.1-3.6 8.1-8.1V136.1c0-4.5-3.6-8.1-8.1-8.1h-47.8c-4.5 0-8.1 3.6-8.1 8.1z" />
+  </svg>
+);
 
 export default function Home() {
   const [skills, setSkills] = useState([]);
@@ -10,6 +19,7 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [sortBy, setSortBy] = useState('views');
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
@@ -18,13 +28,11 @@ export default function Home() {
 
   const LIMIT = 50;
 
-  // Initial load
   useEffect(() => {
     fetchStats();
     fetchCategories();
   }, []);
 
-  // Fetch skills when filters change
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -35,9 +43,8 @@ export default function Home() {
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [search, selectedCategory]);
+  }, [search, selectedCategory, sortBy]);
 
-  // Infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -63,6 +70,7 @@ export default function Home() {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (selectedCategory) params.append('category', selectedCategory);
+      params.append('sort', sortBy);
       params.append('limit', LIMIT.toString());
       params.append('offset', newOffset.toString());
       
@@ -108,32 +116,24 @@ export default function Home() {
 
   function formatDate(dateStr) {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
-      {/* Header */}
       <header className="border-b border-gray-700 sticky top-0 bg-gray-900 z-10">
         <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">
-            <span className="text-blue-400">Claw</span>Hub Clone
-          </h1>
-          <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">
-            GitHub
-          </a>
+          <h1 className="text-2xl font-bold"><span className="text-blue-400">Claw</span>Hub Clone</h1>
+          <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">GitHub</a>
         </div>
       </header>
 
-      {/* Hero */}
       <section className="py-16 px-4 text-center">
         <h2 className="text-4xl font-bold mb-4">Discover OpenClaw Skills</h2>
         <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
           A better skill marketplace for OpenClaw. Browse, search, and install skills to supercharge your AI agents.
         </p>
         
-        {/* Search */}
         <div className="max-w-xl mx-auto relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           <input
@@ -146,7 +146,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats */}
       {stats && (
         <section className="max-w-6xl mx-auto px-4 mb-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -170,20 +169,16 @@ export default function Home() {
         </section>
       )}
 
-      {/* Main Content */}
       <section className="max-w-6xl mx-auto px-4 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Sidebar - Categories */}
           <aside className="lg:col-span-1">
             <div className="bg-gray-800 rounded-xl p-4 sticky top-32">
               <div className="flex items-center gap-2 mb-4">
                 <Filter size={18} className="text-gray-400" />
                 <h3 className="font-bold">Categories</h3>
               </div>
-              <div className="space-y-2">
-                <button onClick={() => setSelectedCategory('')} className={`w-full text-left px-3 py-2 rounded-lg transition ${!selectedCategory ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}>
-                  All Skills
-                </button>
+              <div className="space-y-2 mb-6">
+                <button onClick={() => setSelectedCategory('')} className={`w-full text-left px-3 py-2 rounded-lg transition ${!selectedCategory ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}>All Skills</button>
                 {categories.map(cat => (
                   <button key={cat.name} onClick={() => setSelectedCategory(cat.name)} className={`w-full text-left px-3 py-2 rounded-lg transition flex justify-between ${selectedCategory === cat.name ? 'bg-blue-600 text-white' : 'hover:bg-gray-700'}`}>
                     <span className="capitalize">{cat.name}</span>
@@ -191,10 +186,18 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+              
+              <div className="border-t border-gray-700 pt-4">
+                <h3 className="font-bold mb-4">Sort By</h3>
+                <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+                  <option value="views">Most Popular (Views)</option>
+                  <option value="recent">Newest</option>
+                  <option value="name">Name</option>
+                </select>
+              </div>
             </div>
           </aside>
 
-          {/* Skills Grid */}
           <main className="lg:col-span-3">
             {loading && skills.length === 0 ? (
               <div className="text-center py-12 text-gray-400">Loading skills...</div>
@@ -211,17 +214,12 @@ export default function Home() {
                       <p className="text-sm text-gray-400 mb-3 line-clamp-2">{skill.description}</p>
                       <div className="flex items-center justify-between text-sm text-gray-500">
                         <span>{formatDate(skill.created_at)}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1">
-                            <Eye size={14} /> {skill.views?.toLocaleString()}
-                          </span>
-                        </div>
+                        <span className="flex items-center gap-1">{EYE_ICON} {skill.views?.toLocaleString()}</span>
                       </div>
                     </Link>
                   ))}
                 </div>
                 
-                {/* Infinite scroll trigger */}
                 {hasMore && (
                   <div ref={loadMoreRef} className="py-8 text-center">
                     <span className="text-gray-400">Loading more...</span>
@@ -237,7 +235,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-gray-700 py-8 text-center text-gray-500">
         <p>Built with ❤️ for the OpenClaw community</p>
       </footer>
