@@ -14,6 +14,12 @@ const EYE_ICON = (
   </svg>
 );
 
+const BOOKMARK_ICON = (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512" fill="currentColor">
+    <path d="M128 64c0-35.3 28.7-64 64-64l192 0c35.3 0 64 28.7 64 64l0 320 64 32 0-32L384 384c-35.3 0-64-28.7-64-64L320 128 64 128C28.7 128 0 156.7 0 192L0 448c0 35.3 28.7 64 64 64l192 0c35.3 0 64-28.7 64-64l0-288-64 0z"/>
+  </svg>
+);
+
 export default function SkillPage() {
   const params = useParams();
   const slug = params.slug;
@@ -22,6 +28,7 @@ export default function SkillPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
     if (slug) fetchSkill(slug);
@@ -31,10 +38,21 @@ export default function SkillPage() {
     try {
       setLoading(true);
       setError(null);
+      
       const res = await fetch(`http://localhost:4001/api/skills/${skillSlug}`);
       if (!res.ok) throw new Error('Skill not found');
       const data = await res.json();
       setSkill(data.skill);
+      
+      // Check if bookmarked
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        const user = JSON.parse(userData);
+        const checkRes = await fetch(`http://localhost:4001/api/bookmarks/${skillSlug}/check?userId=${user.id}`);
+        const checkData = await checkRes.json();
+        setBookmarked(checkData.bookmarked);
+      }
+      
       if (data.skill?.categories?.length > 0) {
         const relatedRes = await fetch(`http://localhost:4001/api/skills?category=${data.skill.categories[0]}&limit=5`);
         const relatedData = await relatedRes.json();
@@ -47,15 +65,58 @@ export default function SkillPage() {
     }
   }
 
-  function formatDate(dateStr) {
+  function formatRelativeTime(dateStr) {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  function copyCommand() {
+  async function copyCommand() {
     navigator.clipboard.writeText(`npx clawhub install ${skill.slug}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function toggleBookmark() {
+    const userData = localStorage.getItem('user');
+    if (!userData) {
+      alert('Please sign in to bookmark skills');
+      return;
+    }
+    
+    const user = JSON.parse(userData);
+    
+    try {
+      if (bookmarked) {
+        await fetch(`http://localhost:4001/api/bookmarks/${skill.slug}`, {
+          method: 'DELETE',
+          headers: { 'X-User-Id': user.id.toString() }
+        });
+        setBookmarked(false);
+      } else {
+        await fetch('http://localhost:4001/api/bookmarks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': user.id.toString()
+          },
+          body: JSON.stringify({ slug: skill.slug })
+        });
+        setBookmarked(true);
+      }
+    } catch (err) {
+      console.error('Bookmark error:', err);
+    }
   }
 
   if (loading) {
@@ -72,9 +133,8 @@ export default function SkillPage() {
         <header className="border-b border-gray-700 sticky top-0 bg-gray-900 z-10">
           <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold">
-              <span className="text-blue-400">Claw</span>Hub Clone
+              <span className="text-blue-400">Claw</span>Hub
             </Link>
-            <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">GitHub</a>
           </div>
         </header>
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -89,13 +149,19 @@ export default function SkillPage() {
     <div className="min-h-screen bg-gray-900 text-white">
       <header className="border-b border-gray-700 sticky top-0 bg-gray-900 z-10">
         <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold"><span className="text-blue-400">Claw</span>Hub Clone</Link>
-          <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">GitHub</a>
+          <Link href="/" className="text-2xl font-bold">
+            <span className="text-blue-400">Claw</span>Hub
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/auth" className="text-gray-400 hover:text-white">Sign In</Link>
+          </div>
         </div>
       </header>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <Link href="/" className="text-gray-400 hover:text-white flex items-center gap-2"><ArrowLeft size={20} /> Back to all skills</Link>
+        <Link href="/" className="text-gray-400 hover:text-white flex items-center gap-2">
+          <ArrowLeft size={20} /> Back to all skills
+        </Link>
       </div>
 
       <main className="max-w-6xl mx-auto px-4 pb-16">
@@ -107,13 +173,21 @@ export default function SkillPage() {
                   <h1 className="text-3xl font-bold mb-2">{skill.name}</h1>
                   <div className="flex items-center gap-4 text-gray-400">
                     <span>by {skill.author}</span>
-                    <span>{formatDate(skill.created_at)}</span>
+                    <span>Released {formatRelativeTime(skill.created_at)}</span>
                   </div>
                 </div>
-                {skill.github_url && (
-                  <a href={skill.github_url} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-medium transition">View on GitHub</a>
-                )}
+                <div className="flex gap-2">
+                  <button onClick={toggleBookmark} className={`p-2 rounded-lg transition ${bookmarked ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'}`} title="Add to bookmarks">
+                    {BOOKMARK_ICON}
+                  </button>
+                  {skill.github_url && (
+                    <a href={skill.github_url} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-medium transition">
+                      View on GitHub
+                    </a>
+                  )}
+                </div>
               </div>
+
               <p className="text-gray-300 mb-4">{skill.description}</p>
               <div className="flex flex-wrap gap-2">
                 {(skill.tags || []).map(tag => (

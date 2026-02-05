@@ -4,9 +4,10 @@ import helmet from 'helmet';
 import { skillsRouter } from './routes/skills.js';
 import { searchRouter } from './routes/search.js';
 import { reviewsRouter } from './routes/reviews.js';
+import { authRouter } from './auth.js';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4001;
 
 // Middleware
 app.use(helmet());
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/skills', skillsRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/auth', authRouter);
 
 // Health check
 app.get('/api/health', (_, res) => {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, Filter } from 'lucide-react';
 
 const EYE_ICON = (
@@ -13,7 +14,25 @@ const EYE_ICON = (
   </svg>
 );
 
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export default function Home() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
   const [skills, setSkills] = useState([]);
   const [stats, setStats] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -29,6 +48,10 @@ export default function Home() {
   const LIMIT = 50;
 
   useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setUser(JSON.parse(userData));
+    }
     fetchStats();
     fetchCategories();
   }, []);
@@ -98,7 +121,7 @@ export default function Home() {
     try {
       const res = await fetch('http://localhost:4001/api/skills/stats');
       const data = await res.json();
-      setStats(data.stats || { total: 0, views: 0, installs: 0 });
+      setStats(data.stats || { total: 0, views: 0 });
     } catch (e) {
       console.error('Failed to fetch stats:', e);
     }
@@ -114,17 +137,35 @@ export default function Home() {
     }
   }
 
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  function handleLogout() {
+    localStorage.clear();
+    setUser(null);
+    router.push('/');
   }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <header className="border-b border-gray-700 sticky top-0 bg-gray-900 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold"><span className="text-blue-400">Claw</span>Hub Clone</h1>
-          <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white">GitHub</a>
+        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+          <Link href="/" className="text-2xl font-bold">
+            <span className="text-blue-400">Claw</span>Hub
+          </Link>
+          
+          <div className="flex items-center gap-4">
+            {user ? (
+              <>
+                <Link href="/bookmarks" className="text-gray-400 hover:text-white">Bookmarks</Link>
+                <Link href="/my-skills" className="text-gray-400 hover:text-white">My Skills</Link>
+                <Link href="/add-skill" className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition">+ Add Skill</Link>
+                <span className="text-gray-400">|</span>
+                <span>{user.name}</span>
+                <button onClick={handleLogout} className="text-red-400 hover:text-red-300">Logout</button>
+              </>
+            ) : (
+              <Link href="/auth" className="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition">Sign In</Link>
+            )}
+            <a href="https://github.com/alexandr-belogubov/clawhub-clone" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white ml-4">GitHub</a>
+          </div>
         </div>
       </header>
 
@@ -148,7 +189,7 @@ export default function Home() {
 
       {stats && (
         <section className="max-w-6xl mx-auto px-4 mb-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-gray-800 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-blue-400">{stats.total?.toLocaleString()}</div>
               <div className="text-sm text-gray-400">Total Skills</div>
@@ -156,10 +197,6 @@ export default function Home() {
             <div className="bg-gray-800 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-green-400">{stats.views?.toLocaleString()}</div>
               <div className="text-sm text-gray-400">Total Views</div>
-            </div>
-            <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-400">{stats.installs?.toLocaleString()}</div>
-              <div className="text-sm text-gray-400">Installs</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
               <div className="text-2xl font-bold text-purple-400">{categories.length}</div>
@@ -190,7 +227,7 @@ export default function Home() {
               <div className="border-t border-gray-700 pt-4">
                 <h3 className="font-bold mb-4">Sort By</h3>
                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500">
-                  <option value="views">Most Popular (Views)</option>
+                  <option value="views">Most Popular</option>
                   <option value="recent">Newest</option>
                   <option value="name">Name</option>
                 </select>
@@ -213,7 +250,7 @@ export default function Home() {
                       </div>
                       <p className="text-sm text-gray-400 mb-3 line-clamp-2">{skill.description}</p>
                       <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>{formatDate(skill.created_at)}</span>
+                        <span>Released {formatRelativeTime(skill.created_at)}</span>
                         <span className="flex items-center gap-1">{EYE_ICON} {skill.views?.toLocaleString()}</span>
                       </div>
                     </Link>
