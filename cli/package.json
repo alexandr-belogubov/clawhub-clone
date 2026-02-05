@@ -1,0 +1,15 @@
+{
+  "name": "clawhub-cli",
+  "version": "1.0.0",
+  "description": "ClawHub CLI for installing skills",
+  "main": "index.js",
+  "bin": {
+    "clawhub": "./index.js"
+  },
+  "scripts": {
+    "test": "echo \"No tests\" && exit 0"
+  },
+  "keywords": ["openclaw", "skills", "cli"],
+  "author": "ClawHub",
+  "license": "MIT"
+}
