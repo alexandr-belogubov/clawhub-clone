@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Search, Download, Star, Filter, ArrowRight } from 'lucide-react';
 
@@ -11,27 +11,75 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const observerTarget = useRef(null);
 
+  const LIMIT = 50;
+
+  // Initial load
   useEffect(() => {
-    fetchSkills();
-  }, [search, selectedCategory]);
+    fetchStats();
+    fetchCategories();
+    fetchSkills(0, true);
+  }, []);
 
-  async function fetchSkills() {
+  // Fetch more when reaching bottom
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          fetchSkills(offset);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [offset, hasMore, loading]);
+
+  async function fetchSkills(newOffset = 0, isReset = false) {
     try {
+      setLoading(true);
       const params = new URLSearchParams();
-      if (search) params.append('search', search);
+      params.append('search', search);
+      params.append('limit', LIMIT.toString());
+      params.append('offset', newOffset.toString());
       if (selectedCategory) params.append('category', selectedCategory);
       
       const res = await fetch(`http://localhost:4001/api/skills?${params}`);
       const data = await res.json();
-      setSkills(data.skills || []);
-      setStats({ total: data.total || 0, totalDownloads: 0, totalStars: 0 });
+      
+      const newSkills = data.skills || [];
+      
+      if (isReset) {
+        setSkills(newSkills);
+      } else {
+        setSkills(prev => [...prev, ...newSkills]);
+      }
+      
+      setOffset(newOffset + LIMIT);
+      setHasMore(newSkills.length === LIMIT);
     } catch (e) {
       console.error('Failed to fetch skills:', e);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   }
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchSkills(0, true);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search, selectedCategory]);
 
   async function fetchStats() {
     try {
@@ -52,11 +100,6 @@ export default function Home() {
       console.error('Failed to fetch categories:', e);
     }
   }
-
-  useEffect(() => {
-    fetchStats();
-    fetchCategories();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -105,15 +148,15 @@ export default function Home() {
         <section className="max-w-6xl mx-auto px-4 mb-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-blue-400">{stats.total || skills.length}</div>
+              <div className="text-2xl font-bold text-blue-400">{stats.total?.toLocaleString()}</div>
               <div className="text-sm text-gray-400">Total Skills</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">{stats.downloads || 0}</div>
+              <div className="text-2xl font-bold text-green-400">{stats.downloads?.toLocaleString()}</div>
               <div className="text-sm text-gray-400">Downloads</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-400">{stats.installs || 0}</div>
+              <div className="text-2xl font-bold text-yellow-400">{stats.installs?.toLocaleString()}</div>
               <div className="text-sm text-gray-400">Installs</div>
             </div>
             <div className="bg-gray-800 rounded-xl p-4 text-center">
@@ -170,7 +213,7 @@ export default function Home() {
             ) : (
               <>
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-gray-400">{skills.length} skills</span>
+                  <span className="text-gray-400">{skills.length} of {stats?.total || '...'} skills</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {skills.map(skill => (
@@ -194,7 +237,7 @@ export default function Home() {
                         <span>by {skill.author}</span>
                         <div className="flex items-center gap-3">
                           <span className="flex items-center gap-1">
-                            <Download size={14} /> {skill.downloads}
+                            <Download size={14} /> {skill.downloads?.toLocaleString()}
                           </span>
                           <span className="flex items-center gap-1">
                             <Star size={14} className="text-yellow-400" /> {skill.stars}
@@ -204,6 +247,23 @@ export default function Home() {
                     </Link>
                   ))}
                 </div>
+                
+                {/* Infinite scroll trigger */}
+                {hasMore && (
+                  <div ref={observerTarget} className="py-8 text-center">
+                    {loading ? (
+                      <span className="text-gray-400">Loading more skills...</span>
+                    ) : (
+                      <span className="text-gray-500">Scroll for more</span>
+                    )}
+                  </div>
+                )}
+                
+                {!hasMore && skills.length > 0 && (
+                  <div className="py-8 text-center text-gray-500">
+                    All {skills.length} skills loaded
+                  </div>
+                )}
               </>
             )}
           </main>
