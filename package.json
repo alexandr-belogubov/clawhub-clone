@@ -19,11 +19,15 @@
     "migrate": "node scripts/migrate.js",
     "db:migrate": "npm run migrate",
     "sync:skills": "cd scripts && node sync-skills.js",
+    "scrape": "cd scripts && node scrape-all-skills.js",
+    "parse": "cd scripts && node parse-descriptions-batch.js",
+    "db:import": "cd scripts && node import-to-postgres.js",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
-    "pg": "^8.11.3"
+    "pg": "^8.11.3",
+    "puppeteer": "^21.0.0"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
