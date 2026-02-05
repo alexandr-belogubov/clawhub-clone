@@ -3,7 +3,7 @@ import pg from 'pg';
 const { Pool } = pg;
 
 const pool = new Pool({
-  host: process.env.DB_HOST || '165.232.135.139',
+  host: process.env.DB_HOST || '127.0.0.1',
   port: parseInt(process.env.DB_PORT || '5432'),
   database: process.env.DB_NAME || 'clawhub',
   user: process.env.DB_USER || 'alexander',
@@ -74,7 +74,7 @@ export async function getSkills(options: {
   
   const result = await query(
     `SELECT slug, name, author, views, installs, stars, description, tags, categories, 
-            github_url, version, url, created_at, updated_at
+            github_url, version, url, created_at, updated_at, bookmarks_count
      FROM clawhub_skills ${where}
      ORDER BY ${orderBy} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     params
@@ -95,7 +95,8 @@ export async function getSkills(options: {
     github_url: row.github_url,
     version: row.version,
     updated_at: row.updated_at,
-    created_at: row.created_at
+    created_at: row.created_at,
+    bookmarks_count: row.bookmarks_count || 0
   }));
 }
 
@@ -105,7 +106,7 @@ export async function getSkillBySlug(slug: string) {
   
   const result = await query(
     `SELECT slug, name, author, views, installs, stars, description, tags, categories,
-            github_url, version, url, created_at, updated_at
+            github_url, version, url, created_at, updated_at, bookmarks_count
      FROM clawhub_skills WHERE slug = $1`,
     [slug]
   );
@@ -129,7 +130,8 @@ export async function getSkillBySlug(slug: string) {
     version: row.version,
     url: row.url,
     updated_at: row.updated_at,
-    created_at: row.created_at
+    created_at: row.created_at,
+    bookmarks_count: row.bookmarks_count || 0
   };
 }
 
